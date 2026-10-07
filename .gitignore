@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Build output
+dist/
+build/
+*.egg-info/
+
+# Test / tool caches
+.pytest_cache/
+.coverage
+.ruff_cache/
+.mypy_cache/
+
+# macOS
+.DS_Store
+
+# Runtime data written by the app
+library_data.json
