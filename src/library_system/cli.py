@@ -44,8 +44,10 @@ def main():
     delhi = Library("Delhi")
     mumbai = Library("Mumbai")
     bangalore = Library("Bangalore")
+    chennai = Library("Chennai")
+    kolkata = Library("Kolkata")
 
-    libraries = [delhi, mumbai, bangalore]
+    libraries = [delhi, mumbai, bangalore, chennai, kolkata]
 
     # ----------------------------------------------
     # LOAD SAVED DATA OR ADD DEFAULT BOOKS
@@ -85,6 +87,14 @@ def main():
 
         bangalore.add_book(
             Book("B006", "Percy Jackson and the Olympians")
+        )
+
+        chennai.add_book(
+            Book("B007", "A song of Ice and fire")
+        )
+
+        kolkata.add_book(
+            Book("B008", "Harry Potter")
         )
 
         save_data(libraries, all_cards)
