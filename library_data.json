@@ -50,14 +50,25 @@
                 "title": "1984"
             }
         ],
-        "Chennai": [],
-        "Kolkata": []
+        "Chennai": [
+            {
+                "book_id": "B012",
+                "title": "A song of Ice and fire"
+            }
+        ],
+        "Kolkata": [
+            {
+                "book_id": "B013",
+                "title": "Harry Potter"
+            }
+        ]
     },
     "users": {
         "anmol": [],
         "Anmol": [],
         "Vishesh": [],
         "Annie": [],
-        "ab": []
+        "ab": [],
+        "hey": []
     }
 }

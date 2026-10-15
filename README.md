@@ -1,7 +1,7 @@
 # Library System
 
 A command-line library system. Users can borrow books from the
-Delhi, Mumbai and Bangalore libraries, return them, and see their
+libraries, return them, and see their
 library card. Data is saved to `library_data.json` in the folder the
 program is run from.
 
