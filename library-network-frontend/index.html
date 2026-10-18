@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="LibraMind library network management and member portal demo">
+  <title>LibraMind — Library Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+    <div class="auth-brand"><span class="brand-mark"><i data-lucide="library-big"></i></span><span><strong>LibraMind</strong><small>LIBRARY NETWORK</small></span></div>
+    <div class="auth-card">
+      <div class="auth-card-heading"><p class="eyebrow">WELCOME TO LIBRAMIND</p><h1 id="authTitle">Sign in to your library</h1><p>Use your administrator account or your library card details.</p></div>
+      <form id="signInForm" class="auth-form">
+        <label class="form-label">Sign in as
+          <select id="signInRole"><option value="member">Library member</option><option value="admin">Administrator</option></select>
+        </label>
+        <label class="form-label" id="signInIdentityLabel">Library card number<input id="signInIdentity" autocomplete="username" placeholder="e.g. LM-1001" required></label>
+        <label class="form-label">Password<input id="signInPassword" type="password" autocomplete="current-password" placeholder="Enter password" required></label>
+        <p class="auth-error" id="signInError" role="alert" hidden></p>
+        <button class="button button-primary auth-submit" type="submit">Sign in <i data-lucide="arrow-right"></i></button>
+      </form>
+      <div class="demo-credentials"><strong>Demo sign-in details</strong><div><span>Administrator</span><code>admin</code><code>admin123</code></div><div><span>Member</span><code>LM-1001</code><code>member123</code></div><small>Demo only: authentication is browser-side and is not secure for real accounts until connected to a backend.</small></div>
+    </div>
+    <p class="auth-footnote">One library card. Five branches. Your books, all in one place.</p>
+  </section>
+  <div class="app-shell" id="appShell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="LibraMind home">
+        <span class="brand-mark"><i data-lucide="library-big"></i></span>
+        <span><strong>LibraMind</strong><small>LIBRARY NETWORK</small></span>
+      </a>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>Overview</span></button>
+        <button class="nav-item" data-view="catalogue"><i data-lucide="book-open"></i><span>Book catalogue</span></button>
+        <button class="nav-item" data-view="branches"><i data-lucide="map-pin"></i><span>Branch inventory</span></button>
+        <button class="nav-item" data-view="loans"><i data-lucide="arrow-left-right"></i><span>Borrow & return</span></button>
+        <button class="nav-item" data-view="members"><i data-lucide="users"></i><span>Members</span></button>
+      </nav>
+      <div class="sidebar-divider"></div>
+      <div class="workspace-label">PORTAL PREVIEW</div>
+      <button class="nav-item" data-view="member"><i data-lucide="contact-round"></i><span>Member portal</span><span class="nav-pill">NEW</span></button>
+      <div class="sidebar-bottom">
+        <div class="sidebar-help-icon"><i data-lucide="shield-check"></i></div>
+        <div><strong>Network rules active</strong><p>3 active loans max · No duplicate titles</p></div>
+      </div>
+      <div class="sidebar-footer"><span class="status-dot"></span> Demo mode <span class="footer-separator">•</span> Local data</div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" id="menuToggle" aria-label="Open menu"><i data-lucide="menu"></i></button>
+          <div class="breadcrumb">Library network <span>/</span> <strong id="breadcrumbCurrent">Overview</strong></div>
+        </div>
+        <div class="topbar-actions">
+          <label class="branch-switcher"><i data-lucide="map-pin"></i><span class="sr-only">Active branch</span>
+            <select id="globalBranch" aria-label="Select active branch">
+              <option value="all">All branches</option>
+              <option>Delhi</option><option>Mumbai</option><option>Bangalore</option><option>Chennai</option><option>Kolkata</option>
+            </select><i data-lucide="chevron-down"></i>
+          </label>
+          <button class="icon-button" id="resetDemo" title="Reset demo data" aria-label="Reset demo data"><i data-lucide="rotate-ccw"></i></button>
+          <button class="profile-button" id="profileButton" title="Current workspace"><span class="avatar">LM</span><span class="profile-copy"><strong>Library Admin</strong><small>Administrator</small></span><i data-lucide="chevron-down"></i></button>
+        </div>
+      </header>
+
+      <section class="page-view active" id="view-dashboard">
+        <div class="page-heading">
+          <div><p class="eyebrow">NETWORK OVERVIEW</p><h1>Good morning, Admin <span class="wave">✦</span></h1><p class="muted">Here’s what’s happening across your library network.</p></div>
+          <div class="heading-actions"><button class="button button-secondary" data-action="export"><i data-lucide="download"></i> Export snapshot</button><button class="button button-primary" data-action="add-book"><i data-lucide="plus"></i> Add a book</button></div>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon violet"><i data-lucide="book-open"></i></span><span class="stat-caption">NETWORK-WIDE</span></div><div class="stat-value" id="statTitles">—</div><div class="stat-label">Unique titles</div><div class="stat-foot"><span class="trend-neutral">Catalogue</span><span>Across all branches</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon blue"><i data-lucide="library"></i></span><span class="stat-caption">PHYSICAL COPIES</span></div><div class="stat-value" id="statCopies">—</div><div class="stat-label">Total copies</div><div class="stat-foot"><span class="trend-good" id="statAvailable">— available</span><span>In the network</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon orange"><i data-lucide="arrow-left-right"></i></span><span class="stat-caption">CURRENTLY OUT</span></div><div class="stat-value" id="statLoans">—</div><div class="stat-label">Active loans</div><div class="stat-foot"><span class="trend-neutral">Across branches</span><span>Any-branch returns</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon green"><i data-lucide="users"></i></span><span class="stat-caption">REGISTERED</span></div><div class="stat-value" id="statMembers">—</div><div class="stat-label">Members</div><div class="stat-foot"><span class="trend-good">3-book limit</span><span>Per member</span></div></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel network-panel">
+            <div class="panel-heading"><div><h2>Branch inventory</h2><p>Copies held at each library location</p></div><button class="text-button" data-view="branches">View inventory <i data-lucide="arrow-up-right"></i></button></div>
+            <div class="branch-list" id="dashboardBranches"></div>
+          </article>
+          <article class="panel rules-panel">
+            <div class="panel-heading"><div><h2>Circulation rules</h2><p>Applied to every branch</p></div><span class="rule-status"><span class="status-dot"></span> Enforced</span></div>
+            <div class="rule-row"><span class="rule-icon"><i data-lucide="layers"></i></span><div><strong>Maximum 3 active books</strong><p>A fourth checkout is blocked until a return is recorded.</p></div></div>
+            <div class="rule-row"><span class="rule-icon"><i data-lucide="copy-x"></i></span><div><strong>No duplicate active title</strong><p>Members can’t hold two copies of the same title at once.</p></div></div>
+            <div class="rule-row"><span class="rule-icon"><i data-lucide="git-compare-arrows"></i></span><div><strong>Borrow and return anywhere</strong><p>Borrow at one branch and return at another. Both locations are recorded.</p></div></div>
+          </article>
+          <article class="panel recent-panel">
+            <div class="panel-heading"><div><h2>Recent activity</h2><p>Latest circulation events</p></div><button class="text-button" data-view="loans">All loans <i data-lucide="arrow-up-right"></i></button></div>
+            <div class="activity-list" id="recentActivity"></div>
+          </article>
+          <article class="panel quick-panel">
+            <div class="panel-heading"><div><h2>Quick actions</h2><p>Common librarian tasks</p></div></div>
+            <div class="quick-actions">
+              <button data-action="issue-book"><span class="quick-icon teal"><i data-lucide="book-up"></i></span><span><strong>Issue a book</strong><small>Check out to a member</small></span><i data-lucide="chevron-right"></i></button>
+              <button data-action="return-book"><span class="quick-icon purple"><i data-lucide="book-down"></i></span><span><strong>Return a book</strong><small>Accept at any branch</small></span><i data-lucide="chevron-right"></i></button>
+              <button data-action="add-member"><span class="quick-icon orange"><i data-lucide="user-round-plus"></i></span><span><strong>Register a member</strong><small>Create a library card</small></span><i data-lucide="chevron-right"></i></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-catalogue">
+        <div class="page-heading"><div><p class="eyebrow">DISCOVER & MANAGE</p><h1>Book catalogue</h1><p class="muted">Search titles and see exactly which branches have copies available.</p></div><button class="button button-primary" data-action="add-book"><i data-lucide="plus"></i> Add a book</button></div>
+        <div class="catalogue-toolbar panel"><label class="search-field"><i data-lucide="search"></i><input id="catalogueSearch" type="search" placeholder="Search by title, author or book ID…"></label><select id="catalogueBranch" aria-label="Filter by branch"><option value="all">All branches</option><option>Delhi</option><option>Mumbai</option><option>Bangalore</option><option>Chennai</option><option>Kolkata</option></select><select id="catalogueAvailability" aria-label="Filter availability"><option value="all">All availability</option><option value="available">Available now</option><option value="out">All copies on loan</option></select></div>
+        <div class="catalogue-summary"><span id="catalogueCount">Showing catalogue</span><span><span class="legend-dot available"></span> Available <span class="legend-dot borrowed"></span> On loan</span></div>
+        <div class="book-grid" id="bookGrid"></div>
+      </section>
+
+      <section class="page-view" id="view-branches">
+        <div class="page-heading"><div><p class="eyebrow">NETWORK LOCATIONS</p><h1>Branch inventory</h1><p class="muted">Branch-level stock, available copies, and copies currently on loan.</p></div><button class="button button-secondary" data-action="export"><i data-lucide="download"></i> Export inventory</button></div>
+        <div class="branch-cards" id="branchCards"></div>
+        <article class="panel inventory-panel"><div class="panel-heading"><div><h2 id="inventoryTitle">All branch stock</h2><p>Physical copies by title and location</p></div><label class="search-field compact"><i data-lucide="search"></i><input id="inventorySearch" type="search" placeholder="Filter inventory…"></label></div><div class="table-wrap"><table><thead><tr><th>BOOK / COPY</th><th>BRANCH</th><th>STATUS</th><th>MEMBER</th><th>ACTION</th></tr></thead><tbody id="inventoryRows"></tbody></table></div></article>
+      </section>
+
+      <section class="page-view" id="view-loans">
+        <div class="page-heading"><div><p class="eyebrow">CIRCULATION DESK</p><h1>Borrow & return</h1><p class="muted">Issue a copy at any branch or accept a return at a different branch.</p></div><div class="heading-actions"><button class="button button-secondary" data-action="return-book"><i data-lucide="book-down"></i> Return a book</button><button class="button button-primary" data-action="issue-book"><i data-lucide="book-up"></i> Issue a book</button></div></div>
+        <div class="loan-metrics" id="loanMetrics"></div>
+        <div class="panel loan-panel"><div class="panel-heading"><div><h2>Loan register</h2><p>Borrowing and return locations are tracked separately.</p></div><div class="inline-filters"><select id="loanStatus"><option value="active">Active loans</option><option value="returned">Returned</option><option value="all">All transactions</option></select><label class="search-field compact"><i data-lucide="search"></i><input id="loanSearch" type="search" placeholder="Search member or title…"></label></div></div><div class="table-wrap"><table><thead><tr><th>BOOK</th><th>MEMBER</th><th>BORROWED FROM</th><th>RETURNED TO</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody id="loanRows"></tbody></table></div></div>
+      </section>
+
+      <section class="page-view" id="view-members">
+        <div class="page-heading"><div><p class="eyebrow">MEMBER DIRECTORY</p><h1>Library members</h1><p class="muted">Manage library-card accounts and monitor borrowing limits.</p></div><button class="button button-primary" data-action="add-member"><i data-lucide="user-round-plus"></i> Add a member</button></div>
+        <div class="catalogue-toolbar panel"><label class="search-field"><i data-lucide="search"></i><input id="memberSearch" type="search" placeholder="Search name or library card…"></label><span class="member-rule-note"><i data-lucide="shield-check"></i> Every member can hold up to 3 different active titles</span></div>
+        <div class="members-grid" id="membersGrid"></div>
+      </section>
+
+      <section class="page-view" id="view-member">
+        <div class="page-heading"><div><p class="eyebrow">MEMBER EXPERIENCE PREVIEW</p><h1>My library</h1><p class="muted">A preview of what a library-card holder sees. Choose a demo member to explore.</p></div><label class="member-select-label">Member account <select id="memberPortalSelect" aria-label="Choose demo member"></select></label></div>
+        <div class="member-welcome panel" id="memberWelcome"></div>
+        <div class="member-portal-grid"><article class="panel"><div class="panel-heading"><div><h2>My borrowed books</h2><p>Active loans across every branch</p></div><span class="small-counter" id="memberLoanCount">0 / 3</span></div><div id="memberActiveLoans" class="member-loans"></div></article><article class="panel"><div class="panel-heading"><div><h2>Find a book</h2><p>See available copies across the network</p></div></div><label class="search-field"><i data-lucide="search"></i><input id="memberPortalSearch" type="search" placeholder="Search books to borrow…"></label><div id="memberCatalogue" class="member-catalogue"></div></article></div>
+        <div class="notice-strip"><i data-lucide="info"></i><span>This is a front-end preview. A real card login, reservations, and cross-device account sync require backend/API integration.</span></div>
+      </section>
+
+      <footer class="app-footer"><span>© 2026 LibraMind Library Network</span><span><span class="status-dot"></span> Frontend demo <span class="footer-separator">·</span> Changes saved in this browser</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header"><div><p class="eyebrow" id="modalEyebrow">LIBRARY NETWORK</p><h2 id="modalTitle">Action</h2></div><button class="icon-button" id="modalClose" aria-label="Close dialog"><i data-lucide="x"></i></button></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </section>
+  </div>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
