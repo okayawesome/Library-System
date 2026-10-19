@@ -5,11 +5,11 @@
   const STORAGE_KEY = 'libramind-network-v1';
   const MAX_ACTIVE_LOANS = 3;
   const BRANCHES = [
-    { name: 'Delhi', city: 'Connaught Place', color: 'violet', initials: 'DE' },
-    { name: 'Mumbai', city: 'Fort', color: 'blue', initials: 'MU' },
-    { name: 'Bangalore', city: 'Indiranagar', color: 'teal', initials: 'BL' },
-    { name: 'Chennai', city: 'Anna Nagar', color: 'orange', initials: 'CH' },
-    { name: 'Kolkata', city: 'Park Street', color: 'pink', initials: 'KO' },
+    { name: 'Delhi', city: 'Connaught Place', initials: 'DE' },
+    { name: 'Mumbai', city: 'Fort', initials: 'MU' },
+    { name: 'Bangalore', city: 'Indiranagar', initials: 'BL' },
+    { name: 'Chennai', city: 'Anna Nagar', initials: 'CH' },
+    { name: 'Kolkata', city: 'Park Street', initials: 'KO' },
   ];
 
   const SEED = {
@@ -138,6 +138,7 @@
       return;
     }
     session = nextSession;
+    $('#signInPassword').value = '';
     if (session.role === 'member') selectedMemberId = session.memberId;
     $('#authScreen').hidden = true;
     $('#appShell').hidden = false;
@@ -148,6 +149,7 @@
 
   function signOut() {
     session = null;
+    setMenu(false);
     $('#appShell').hidden = true;
     $('#authScreen').hidden = false;
     $('#signInForm').reset();
@@ -159,10 +161,11 @@
   function applyRoleInterface() {
     const isMember = session?.role === 'member';
     $$('.nav-item[data-view]').forEach((button) => {
-      const view = button.dataset.view;
-      button.hidden = isMember ? view !== 'member' : view === 'member';
+      button.hidden = isMember && button.dataset.view !== 'member';
     });
     $('.workspace-label').hidden = isMember;
+    $('#portalLabel').hidden = isMember;
+    $('.nav-pill').hidden = isMember;
     $('.sidebar-divider').hidden = isMember;
     $('.sidebar-bottom').hidden = isMember;
     $('#globalBranch').closest('.branch-switcher').hidden = isMember;
@@ -170,12 +173,16 @@
     $('#profileButton .profile-copy strong').textContent = isMember ? session.name : 'Library Admin';
     $('#profileButton .profile-copy small').textContent = isMember ? 'Library member · Sign out' : 'Administrator · Sign out';
     $('#profileButton .avatar').textContent = initials(session.name);
+    $('#profileButton').setAttribute('aria-label', `Sign out of ${session.name}`);
     $('#view-member .eyebrow').textContent = isMember ? 'YOUR LIBRARY ACCOUNT' : 'MEMBER EXPERIENCE PREVIEW';
     $('#view-member .page-heading .muted').textContent = isMember
       ? 'Your library card, registered branch, and books currently checked out.'
       : 'A preview of what a library-card holder sees. Choose a demo member to explore.';
     $('#view-member .member-select-label').hidden = isMember;
-    $('#view-member .member-portal-grid').hidden = isMember;
+    // Members see their own loans; "Find a book" (staff-mediated borrowing) stays admin-only.
+    const portalGrid = $('#view-member .member-portal-grid');
+    portalGrid.classList.toggle('is-single', isMember);
+    portalGrid.lastElementChild.hidden = isMember;
     $('#view-member .notice-strip').hidden = false;
     $('#view-member .notice-strip span').textContent = isMember
       ? 'For account changes or returns, please visit any branch library desk.'
@@ -186,17 +193,21 @@
   function switchView(view) {
     if (!session) return;
     if (session.role === 'member' && view !== 'member') return;
-    if (session.role === 'admin' && view === 'member') return;
     const target = $(`#view-${view}`);
     if (!target) return;
     activeView = view;
     $$('.page-view').forEach((element) => element.classList.toggle('active', element === target));
-    $$('.nav-item[data-view]').forEach((element) => element.classList.toggle('active', element.dataset.view === view));
+    $$('.nav-item[data-view]').forEach((element) => {
+      const isCurrent = element.dataset.view === view;
+      element.classList.toggle('active', isCurrent);
+      if (isCurrent) element.setAttribute('aria-current', 'page');
+      else element.removeAttribute('aria-current');
+    });
     $('#breadcrumbCurrent').textContent = ({
       dashboard: 'Overview', catalogue: 'Book catalogue', branches: 'Branch inventory',
       loans: 'Borrow & return', members: 'Members', member: 'Member portal',
     })[view] || view;
-    $('#sidebar').classList.remove('sidebar-open');
+    setMenu(false);
     renderView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -220,6 +231,8 @@
   }
 
   function renderDashboard() {
+    const hour = new Date().getHours();
+    $('#dashGreeting').textContent = hour < 5 || hour >= 18 ? 'Good evening' : hour < 12 ? 'Good morning' : 'Good afternoon';
     const books = scopedBooks();
     const titles = new Set(books.map((book) => titleKey(book.title)));
     const available = availableCopies(books);
@@ -234,20 +247,20 @@
       const branchAvailable = availableCopies(branchBooks);
       const percent = branchBooks.length ? Math.round((branchAvailable / branchBooks.length) * 100) : 0;
       return `<button class="branch-row" data-branch-open="${branch.name}">
-        <span class="branch-avatar ${branch.color}">${branch.initials}</span>
+        <span class="branch-avatar">${branch.initials}</span>
         <span class="branch-row-main"><strong>${branch.name}</strong><small>${branch.city}</small></span>
         <span class="branch-row-stock"><strong>${branchAvailable}<small> / ${branchBooks.length}</small></strong><span class="mini-progress"><span style="width:${percent}%"></span></span></span>
       </button>`;
     }).join('');
     const events = state.activity.slice(0, 5);
     $('#recentActivity').innerHTML = events.length ? events.map((event) => `
-      <div class="activity-row"><span class="activity-icon ${event.type === 'return' ? 'green' : event.type === 'issue' ? 'blue' : 'purple'}">${icon(event.type === 'return' ? 'book-down' : event.type === 'issue' ? 'book-up' : 'sparkles')}</span><div><strong>${escapeHtml(event.message)}</strong><p>${escapeHtml(event.detail || '')}</p></div><time>${new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit' }).format(new Date(event.at))}</time></div>`).join('') : '<div class="empty-state compact-empty"><span class="empty-icon">✦</span><strong>No activity yet</strong><p>Issue or return a book to see activity here.</p></div>';
+      <div class="activity-row"><span class="activity-icon">${icon(event.type === 'return' ? 'book-down' : event.type === 'issue' ? 'book-up' : 'sparkles')}</span><div><strong>${escapeHtml(event.message)}</strong><p>${escapeHtml(event.detail || '')}</p></div><time>${new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit' }).format(new Date(event.at))}</time></div>`).join('') : '<div class="empty-state compact-empty"><span class="empty-icon">' + icon('sparkles') + '</span><strong>No activity yet</strong><p>Issue or return a book to see activity here.</p></div>';
   }
 
   function bookCover(book) {
-    const themes = { Fantasy: 'cover-violet', Classic: 'cover-sand', Fiction: 'cover-teal', Science: 'cover-blue' };
-    const theme = themes[book.category] || 'cover-blue';
-    return `<div class="book-cover ${theme}"><span class="cover-line"></span><span class="cover-title">${escapeHtml(book.title)}</span><span class="cover-author">${escapeHtml(book.author)}</span><span class="cover-emblem">✦</span></div>`;
+    const themes = { Fantasy: 'cover-fantasy', Classic: 'cover-classic', Fiction: 'cover-fiction', Science: 'cover-science' };
+    const theme = themes[book.category] || 'cover-default';
+    return `<div class="book-cover ${theme}" aria-hidden="true"><span class="cover-line"></span><span class="cover-title">${escapeHtml(book.title)}</span><span class="cover-author">${escapeHtml(book.author)}</span><span class="cover-emblem">${icon('sparkles')}</span></div>`;
   }
 
   function renderCatalogue() {
@@ -262,8 +275,9 @@
     $('#catalogueCount').textContent = `${books.length} physical ${books.length === 1 ? 'copy' : 'copies'} · ${new Set(books.map((book) => titleKey(book.title))).size} unique titles`;
     $('#bookGrid').innerHTML = books.length ? books.map((book) => {
       const available = isBookAvailable(book);
-      return `<article class="book-card">${bookCover(book)}<div class="book-card-content"><div class="book-card-top"><span class="category-chip">${escapeHtml(book.category)}</span><span class="availability-chip ${available ? 'is-available' : 'is-borrowed'}"><span class="legend-dot ${available ? 'available' : 'borrowed'}"></span>${available ? 'Available' : 'On loan'}</span></div><h3>${escapeHtml(book.title)}</h3><p class="book-author">${escapeHtml(book.author)}</p><div class="book-meta"><span>${icon('map-pin')} ${escapeHtml(book.branch)}</span><span>${escapeHtml(book.id)}</span></div><button class="button ${available ? 'button-secondary' : 'button-disabled'} full-button" ${available ? `data-action="issue-book" data-book-id="${book.id}"` : 'disabled'}>${available ? 'Issue this copy' : 'Currently on loan'} ${icon('arrow-up-right')}</button></div></article>`;
-    }).join('') : '<div class="empty-state full-span"><span class="empty-icon">⌕</span><strong>No matching copies</strong><p>Try another search or change your filters.</p></div>';
+      return `<article class="book-card">${bookCover(book)}<div class="book-card-content"><div class="book-card-top"><span class="category-chip">${escapeHtml(book.category)}</span><span class="availability-chip ${available ? 'is-available' : 'is-borrowed'}"><span class="legend-dot ${available ? 'available' : 'borrowed'}"></span>${available ? 'Available' : 'On loan'}</span></div><h3 title="${escapeHtml(book.title)}">${escapeHtml(book.title)}</h3><p class="book-author">${escapeHtml(book.author)}</p><div class="book-meta"><span>${icon('map-pin')} ${escapeHtml(book.branch)}</span><span>${escapeHtml(book.id)}</span></div><button class="button ${available ? 'button-secondary' : 'button-disabled'} full-button" ${available ? `data-action="issue-book" data-book-id="${book.id}"` : 'disabled'}>${available ? 'Issue this copy' : 'Currently on loan'} ${icon('arrow-up-right')}</button></div></article>`;
+    }).join('') : '<div class="empty-state full-span"><span class="empty-icon">' + icon('search-x') + '</span><strong>No matching copies</strong><p>Try another search or change your filters.</p></div>';
+    refreshIcons();
   }
 
   function renderBranches() {
@@ -273,7 +287,7 @@
       const books = state.books.filter((book) => book.branch === branch.name);
       const available = availableCopies(books);
       const borrowed = books.length - available;
-      return `<button class="branch-card ${selected === branch.name ? 'selected' : ''}" data-branch-open="${branch.name}"><div class="branch-card-top"><span class="branch-avatar large ${branch.color}">${branch.initials}</span><span class="branch-open-link">${icon('arrow-up-right')}</span></div><h3>${branch.name} Library</h3><p>${branch.city}</p><div class="branch-card-stats"><div><strong>${books.length}</strong><small>Total copies</small></div><div><strong>${available}</strong><small>Available</small></div><div><strong>${borrowed}</strong><small>On loan</small></div></div><div class="stock-progress"><span style="width:${books.length ? (available / books.length) * 100 : 0}%"></span></div></button>`;
+      return `<button class="branch-card ${selected === branch.name ? 'selected' : ''}" data-branch-open="${branch.name}"><div class="branch-card-top"><span class="branch-avatar large">${branch.initials}</span><span class="branch-open-link">${icon('arrow-up-right')}</span></div><h3>${branch.name} Library</h3><p>${branch.city}</p><div class="branch-card-stats"><div><strong>${books.length}</strong><small>Total copies</small></div><div><strong>${available}</strong><small>Available</small></div><div><strong>${borrowed}</strong><small>On loan</small></div></div><div class="stock-progress"><span style="width:${books.length ? (available / books.length) * 100 : 0}%"></span></div></button>`;
     }).join('');
     $('#inventoryTitle').textContent = selected === 'all' ? 'All branch stock' : `${selected} branch stock`;
     renderInventoryRows();
@@ -286,7 +300,7 @@
     $('#inventoryRows').innerHTML = books.length ? books.map((book) => {
       const loan = state.loans.find((item) => item.bookId === book.id && isActiveLoan(item));
       const member = loan ? getMember(loan.memberId) : null;
-      return `<tr><td><div class="table-book"><span class="table-book-icon">${icon('book-open')}</span><span><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></span></div></td><td><span class="branch-tag">${escapeHtml(book.branch)}</span></td><td><span class="status-chip ${loan ? 'status-loaned' : 'status-available'}"><span class="legend-dot ${loan ? 'borrowed' : 'available'}"></span>${loan ? 'On loan' : 'Available'}</span></td><td>${member ? escapeHtml(member.name) : '<span class="muted">—</span>'}</td><td>${loan ? `<button class="table-action" data-action="return-book" data-loan-id="${loan.id}">Return <i data-lucide="arrow-right"></i></button>` : `<button class="table-action" data-action="issue-book" data-book-id="${book.id}">Issue <i data-lucide="arrow-right"></i></button>`}</td></tr>`;
+      return `<tr><td><div class="table-book"><span class="table-book-icon">${icon('book-open')}</span><span><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></span></div></td><td data-label="Branch"><span class="branch-tag">${escapeHtml(book.branch)}</span></td><td data-label="Status"><span class="status-chip ${loan ? 'status-loaned' : 'status-available'}"><span class="legend-dot ${loan ? 'borrowed' : 'available'}"></span>${loan ? 'On loan' : 'Available'}</span></td><td data-label="Member">${member ? escapeHtml(member.name) : '<span class="muted">—</span>'}</td><td class="td-action">${loan ? `<button class="table-action" data-action="return-book" data-loan-id="${loan.id}">Return <i data-lucide="arrow-right"></i></button>` : `<button class="table-action" data-action="issue-book" data-book-id="${book.id}">Issue <i data-lucide="arrow-right"></i></button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="5"><div class="empty-state compact-empty"><strong>No inventory matches</strong><p>Try a different branch or search term.</p></div></td></tr>';
     refreshIcons();
   }
@@ -294,7 +308,7 @@
   function renderLoans() {
     const active = state.loans.filter(isActiveLoan).length;
     const returned = state.loans.length - active;
-    $('#loanMetrics').innerHTML = `<div class="loan-metric"><span class="stat-icon orange">${icon('book-up')}</span><div><strong>${active}</strong><small>Active loans</small></div></div><div class="loan-metric"><span class="stat-icon green">${icon('book-check')}</span><div><strong>${returned}</strong><small>Returned copies</small></div></div><div class="loan-metric"><span class="stat-icon violet">${icon('git-compare-arrows')}</span><div><strong>${state.loans.filter((loan) => loan.returnedAt && loan.returnBranch !== loan.borrowBranch).length}</strong><small>Cross-branch returns</small></div></div>`;
+    $('#loanMetrics').innerHTML = `<div class="loan-metric"><span class="stat-icon">${icon('book-up')}</span><div><strong>${active}</strong><small>Active loans</small></div></div><div class="loan-metric"><span class="stat-icon">${icon('book-check')}</span><div><strong>${returned}</strong><small>Returned copies</small></div></div><div class="loan-metric"><span class="stat-icon">${icon('git-compare-arrows')}</span><div><strong>${state.loans.filter((loan) => loan.returnedAt && loan.returnBranch !== loan.borrowBranch).length}</strong><small>Cross-branch returns</small></div></div>`;
     const status = $('#loanStatus').value;
     const query = $('#loanSearch').value.toLocaleLowerCase();
     const loans = [...state.loans].reverse().filter((loan) => {
@@ -307,7 +321,7 @@
       const book = getBook(loan.bookId);
       const member = getMember(loan.memberId);
       const activeLoan = isActiveLoan(loan);
-      return `<tr><td><div class="table-book"><span class="table-book-icon">${icon('book-open')}</span><span><strong>${escapeHtml(book?.title || 'Removed book')}</strong><small>${escapeHtml(book?.id || loan.bookId)} · ${formatDate(loan.borrowedAt)}</small></span></div></td><td><div class="member-cell"><span class="avatar small">${initials(member?.name || '?')}</span><span><strong>${escapeHtml(member?.name || 'Unknown')}</strong><small>${escapeHtml(member?.card || '')}</small></span></div></td><td><span class="branch-tag">${escapeHtml(loan.borrowBranch)}</span></td><td>${loan.returnBranch ? `<span class="branch-tag">${escapeHtml(loan.returnBranch)}</span><small class="table-subline">${loan.returnBranch !== loan.borrowBranch ? 'Cross-branch return' : 'Same branch'}</small>` : '<span class="muted">Not returned</span>'}</td><td><span class="status-chip ${activeLoan ? 'status-loaned' : 'status-returned'}">${activeLoan ? 'Active' : 'Returned'}</span></td><td>${activeLoan ? `<button class="table-action" data-action="return-book" data-loan-id="${loan.id}">Return <i data-lucide="arrow-right"></i></button>` : '<span class="muted">Complete</span>'}</td></tr>`;
+      return `<tr><td><div class="table-book"><span class="table-book-icon">${icon('book-open')}</span><span><strong>${escapeHtml(book?.title || 'Removed book')}</strong><small>${escapeHtml(book?.id || loan.bookId)} · ${formatDate(loan.borrowedAt)}</small></span></div></td><td data-label="Member"><div class="member-cell"><span class="avatar small">${initials(member?.name || '?')}</span><span><strong>${escapeHtml(member?.name || 'Unknown')}</strong><small>${escapeHtml(member?.card || '')}</small></span></div></td><td data-label="Borrowed from"><span class="branch-tag">${escapeHtml(loan.borrowBranch)}</span></td><td data-label="Returned to">${loan.returnBranch ? `<span class="branch-tag">${escapeHtml(loan.returnBranch)}</span><small class="table-subline">${loan.returnBranch !== loan.borrowBranch ? 'Cross-branch return' : 'Same branch'}</small>` : '<span class="muted">Not returned</span>'}</td><td data-label="Status"><span class="status-chip ${activeLoan ? 'status-loaned' : 'status-returned'}">${activeLoan ? 'Active' : 'Returned'}</span></td><td class="td-action">${activeLoan ? `<button class="table-action" data-action="return-book" data-loan-id="${loan.id}">Return <i data-lucide="arrow-right"></i></button>` : '<span class="muted">Complete</span>'}</td></tr>`;
     }).join('') : '<tr><td colspan="6"><div class="empty-state compact-empty"><strong>No loans found</strong><p>Try another filter, or issue a book to create a loan.</p></div></td></tr>';
     refreshIcons();
   }
@@ -319,6 +333,7 @@
       const loans = activeLoans(member.id);
       return `<article class="member-card"><div class="member-card-top"><span class="avatar member-avatar">${initials(member.name)}</span><span class="member-card-id">${escapeHtml(member.card)}</span></div><h3>${escapeHtml(member.name)}</h3><p>${escapeHtml(member.email)}</p><div class="member-home">${icon('map-pin')} Registered at ${escapeHtml(member.homeBranch)}</div><div class="member-card-bottom"><div><strong>${loans.length} / ${MAX_ACTIVE_LOANS}</strong><small>Active books</small></div><div class="member-progress"><span style="width:${(loans.length / MAX_ACTIVE_LOANS) * 100}%"></span></div></div><button class="button button-secondary full-button" data-action="view-member" data-member-id="${member.id}">View member account ${icon('arrow-up-right')}</button></article>`;
     }).join('') : '<div class="empty-state full-span"><strong>No members found</strong><p>Try another search or register a new member.</p></div>';
+    refreshIcons();
   }
 
   function renderMemberPortal() {
@@ -342,7 +357,7 @@
     $('#memberActiveLoans').innerHTML = loans.length ? loans.map((loan) => {
       const book = getBook(loan.bookId);
       return `<div class="member-loan-row">${bookCover(book)}<div class="member-loan-info"><strong>${escapeHtml(book.title)}</strong><p>${escapeHtml(book.author)}</p><span>Borrowed from ${escapeHtml(loan.borrowBranch)} · ${formatDate(loan.borrowedAt)}</span></div><span class="status-chip status-loaned">On loan</span></div>`;
-    }).join('') : '<div class="empty-state compact-empty"><span class="empty-icon">✦</span><strong>Your shelf is clear</strong><p>You have no active loans. Find your next read.</p></div>';
+    }).join('') : '<div class="empty-state compact-empty"><span class="empty-icon">' + icon('sparkles') + '</span><strong>Your shelf is clear</strong><p>You have no active loans. Find your next read.</p></div>';
     const query = ($('#memberPortalSearch')?.value || '').toLocaleLowerCase();
     const titleGroups = new Map();
     state.books.forEach((book) => {
@@ -358,6 +373,30 @@
       const borrowCopy = available[0];
       return `<div class="member-catalogue-row"><div class="member-catalogue-cover">${icon('book-open')}</div><div class="member-catalogue-info"><strong>${escapeHtml(group.title)}</strong><p>${escapeHtml(group.author)}</p><small>${available.length} available · ${branches.length ? branches.join(', ') : 'No available branches'}</small></div><button class="mini-button" ${(!borrowCopy || alreadyBorrowed || loans.length >= MAX_ACTIVE_LOANS) ? 'disabled' : `data-action="member-borrow" data-book-id="${borrowCopy.id}"`} title="${alreadyBorrowed ? 'You already have this title on loan' : loans.length >= MAX_ACTIVE_LOANS ? 'Return a book before borrowing another' : 'Borrow from an available branch'}">${alreadyBorrowed ? 'On loan' : borrowCopy ? 'Borrow' : 'Unavailable'}</button></div>`;
     }).join('') || '<p class="muted empty-search">No books match that search.</p>';
+    refreshIcons();
+  }
+
+  function setMenu(open) {
+    $('#sidebar').classList.toggle('sidebar-open', open);
+    document.body.classList.toggle('menu-open', open);
+    $('#menuToggle').setAttribute('aria-expanded', String(open));
+    $('#menuToggle').setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+
+  function trapModalFocus(event) {
+    if (event.key !== 'Tab' || $('#modalBackdrop').hidden) return;
+    const focusable = $$('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', $('.modal'))
+      .filter((element) => !element.hidden);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function openModal(title, eyebrow, body, footer) {
@@ -367,6 +406,7 @@
     $('#modalBody').innerHTML = body;
     $('#modalFooter').innerHTML = footer;
     $('#modalBackdrop').hidden = false;
+    $('#appShell').inert = true;
     document.body.classList.add('modal-open');
     refreshIcons();
     $('#modalClose').focus();
@@ -374,6 +414,7 @@
 
   function closeModal() {
     $('#modalBackdrop').hidden = true;
+    $('#appShell').inert = false;
     document.body.classList.remove('modal-open');
     if (lastFocusedElement?.focus) lastFocusedElement.focus();
   }
@@ -503,11 +544,10 @@
         <label class="form-label">Author<input name="author" required maxlength="100" placeholder="Author name"></label>
         <div class="form-row"><label class="form-label">Category<select name="category">${selectOptions(['Fiction', 'Fantasy', 'Classic', 'Science', 'History', 'Technology', 'Biography', 'Other'], 'Fiction')}</select></label><label class="form-label">Branch<select name="branch">${selectOptions(BRANCHES.map((branch) => branch.name), currentBranch() === 'all' ? 'Delhi' : currentBranch())}</select></label></div>
         <p class="form-helper">Each entry represents one physical copy. Add the same title again to register another copy at another branch.</p>
-      </form>`, `<button class="button button-secondary" data-modal-cancel>Cancel</button><button class="button button-primary" id="confirmAddBook">${icon('plus')} Add copy</button>`);
-    $('#confirmAddBook').addEventListener('click', () => {
-      const form = $('#addBookForm');
-      if (!form.reportValidity()) return;
-      const data = new FormData(form);
+      </form>`, `<button class="button button-secondary" data-modal-cancel>Cancel</button><button class="button button-primary" id="confirmAddBook" type="submit" form="addBookForm">${icon('plus')} Add copy</button>`);
+    $('#addBookForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
       const title = data.get('title').trim();
       const sameTitle = state.books.filter((book) => titleKey(book.title) === titleKey(title));
       const book = {
@@ -530,17 +570,17 @@
         <label class="form-label">Email address<input name="email" type="email" required placeholder="member@example.com"></label>
         <label class="form-label">Home branch<select name="homeBranch">${selectOptions(BRANCHES.map((branch) => branch.name), currentBranch() === 'all' ? 'Delhi' : currentBranch())}</select></label>
         <p class="form-helper">A demo library card ID is generated automatically. Real authentication and card verification require backend integration.</p>
-      </form>`, `<button class="button button-secondary" data-modal-cancel>Cancel</button><button class="button button-primary" id="confirmAddMember">${icon('user-round-plus')} Register member</button>`);
-    $('#confirmAddMember').addEventListener('click', () => {
-      const form = $('#addMemberForm');
-      if (!form.reportValidity()) return;
-      const data = new FormData(form);
+      </form>`, `<button class="button button-secondary" data-modal-cancel>Cancel</button><button class="button button-primary" id="confirmAddMember" type="submit" form="addMemberForm">${icon('user-round-plus')} Register member</button>`);
+    $('#addMemberForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
       const name = data.get('name').trim();
+      const memberNumber = state.nextMemberId++;
       const member = {
-        id: `M${String(state.nextMemberId++).padStart(3, '0')}`,
+        id: `M${String(memberNumber).padStart(3, '0')}`,
         name, email: data.get('email').trim(),
         homeBranch: data.get('homeBranch'),
-        card: `LM-${String(1000 + state.nextMemberId - 2).padStart(4, '0')}`,
+        card: `LM-${1000 + memberNumber}`,
       };
       state.members.push(member);
       selectedMemberId = member.id;
@@ -646,10 +686,25 @@
       if (event.target === $('#modalBackdrop')) closeModal();
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !$('#modalBackdrop').hidden) closeModal();
+      trapModalFocus(event);
+      if (event.key !== 'Escape') return;
+      if (!$('#modalBackdrop').hidden) closeModal();
+      else if ($('#sidebar').classList.contains('sidebar-open')) {
+        setMenu(false);
+        $('#menuToggle').focus();
+      }
     });
     $('#resetDemo').addEventListener('click', resetDemo);
-    $('#menuToggle').addEventListener('click', () => $('#sidebar').classList.toggle('sidebar-open'));
+    $('#menuToggle').addEventListener('click', () => {
+      const open = !$('#sidebar').classList.contains('sidebar-open');
+      setMenu(open);
+      if (open) $('.nav-item:not([hidden])')?.focus();
+    });
+    $('#sidebarScrim').addEventListener('click', () => setMenu(false));
+    $('#signOutButton').addEventListener('click', signOut);
+    window.matchMedia('(max-width: 930px)').addEventListener('change', (event) => {
+      if (!event.matches) setMenu(false);
+    });
   }
 
   function seedActivityIfEmpty() {
