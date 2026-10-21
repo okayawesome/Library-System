@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "library-system"
+version = "0.1.0"
+description = "Library network: FastAPI + SQLite backend that also serves the web frontend, plus a CLI."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.157.0",
+    "pwdlib[argon2]>=0.3.1",
+    "pyjwt>=2.15.1",
+    "sqlmodel>=0.0.48",
+]
+
+[project.scripts]
+library-system = "library_system.cli:main"
+
+[tool.fastapi]
+entrypoint = "library_system.api.main:app"

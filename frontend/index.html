@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#EDEAE0">
+  <meta name="description" content="LibraMind library network: members borrow and return books, admins grow the catalogue">
+  <title>LibraMind — Library Network</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234A372D'/%3E%3Cstop offset='1' stop-color='%232B1D16'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Cpath d='M10 8v16M15 8v16M20.5 9l4.5 15' fill='none' stroke='%23EDEAE0' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script defer src="https://unpkg.com/lucide@1.59.0/dist/umd/lucide.min.js" integrity="sha384-4VQAGBhahgTiMVvXUqbh6qcs45zGzR/8znv7XORRfWkxZfzRbhLL5Uh+fSdvdqdM" crossorigin="anonymous"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+    <div class="auth-brand"><span class="brand-mark"><i data-lucide="library-big"></i></span><span><strong>LibraMind</strong><small>LIBRARY NETWORK</small></span></div>
+    <div class="auth-card">
+      <div class="auth-card-heading"><p class="eyebrow">WELCOME TO LIBRAMIND</p><h1 id="authTitle">Sign in to your library</h1><p id="authIntro">Members sign in with their library card. Library staff sign in as administrator.</p></div>
+      <form id="signInForm" class="auth-form">
+        <label class="form-label">Sign in as
+          <select id="signInRole"><option value="member">Library member</option><option value="admin">Administrator</option></select>
+        </label>
+        <label class="form-label" id="signInIdentityLabel">Library card number<input id="signInIdentity" autocomplete="username" placeholder="e.g. LM-1001" required></label>
+        <label class="form-label">Password<input id="signInPassword" type="password" autocomplete="current-password" placeholder="Enter password" required></label>
+        <p class="auth-error" id="signInError" role="alert" hidden></p>
+        <button class="button button-primary auth-submit" type="submit">Sign in <i data-lucide="arrow-right"></i></button>
+        <p class="auth-switch" id="signUpPrompt">New member? <button class="text-button" type="button" data-auth="signup">Create an account</button></p>
+      </form>
+      <form id="signUpForm" class="auth-form" hidden>
+        <label class="form-label">Full name<input name="name" required maxlength="80" autocomplete="name" placeholder="Your name"></label>
+        <label class="form-label">Email address<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
+        <label class="form-label">Home branch<select name="homeBranch" id="signUpBranch" required></select></label>
+        <label class="form-label">Password<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label>
+        <p class="auth-error" id="signUpError" role="alert" hidden></p>
+        <button class="button button-primary auth-submit" type="submit">Create account <i data-lucide="arrow-right"></i></button>
+        <p class="auth-switch">Already have a library card? <button class="text-button" type="button" data-auth="signin">Sign in</button></p>
+      </form>
+      <div class="demo-credentials"><strong>Demo sign-in details</strong><div><span>Administrator</span><code>admin</code><code>admin123</code></div><div><span>Member</span><code>LM-1001</code><code>member123</code></div><small>Demo accounts created on the first run. Change these passwords before using real data.</small></div>
+    </div>
+    <p class="auth-footnote">One library card. Every branch. Your books, all in one place.</p>
+  </section>
+
+  <div class="app-shell" id="appShell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="LibraMind home">
+        <span class="brand-mark"><i data-lucide="library-big"></i></span>
+        <span><strong>LibraMind</strong><small>LIBRARY NETWORK</small></span>
+      </a>
+      <div class="workspace-label">LIBRARY</div>
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item" data-view="my-library" data-role="member"><i data-lucide="contact-round"></i><span>My library</span></button>
+        <button class="nav-item" data-view="overview" data-role="admin"><i data-lucide="layout-dashboard"></i><span>Overview</span></button>
+        <button class="nav-item" data-view="catalogue"><i data-lucide="book-open"></i><span>Book catalogue</span></button>
+        <button class="nav-item" data-view="branches"><i data-lucide="map-pin"></i><span>Branch inventory</span></button>
+        <button class="nav-item" data-view="loans" data-role="member"><i data-lucide="arrow-left-right"></i><span>My loans</span></button>
+      </nav>
+      <div class="sidebar-lower">
+      <div class="sidebar-bottom">
+        <div class="sidebar-help-icon"><i data-lucide="shield-check"></i></div>
+        <div><strong>Network rules active</strong><p>3 active loans max · No duplicate titles</p></div>
+      </div>
+      <button class="nav-item sidebar-signout" id="signOutButton" type="button"><i data-lucide="log-out"></i><span>Sign out</span></button>
+      <div class="sidebar-footer"><span class="status-dot"></span> <span id="roleLabel">Member</span> <span class="footer-separator" aria-hidden="true">•</span> Live data</div>
+      </div>
+    </aside>
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar"><i data-lucide="menu"></i></button>
+          <nav class="breadcrumb" aria-label="Breadcrumb"><span class="crumb-root">Library network</span><span class="crumb-sep" aria-hidden="true">/</span><strong id="breadcrumbCurrent" aria-current="page"></strong></nav>
+        </div>
+        <div class="topbar-actions">
+          <label class="branch-switcher"><i data-lucide="map-pin"></i><span class="sr-only">Active branch</span>
+            <select id="globalBranch" aria-label="Select active branch"><option value="all">All branches</option></select><i data-lucide="chevron-down"></i>
+          </label>
+          <button class="profile-button" id="profileButton" type="button" title="Sign out" aria-label="Sign out"><span class="avatar" id="profileAvatar"></span><span class="profile-copy"><strong id="profileName"></strong><small id="profileRole"></small></span><i data-lucide="chevron-down"></i></button>
+        </div>
+      </header>
+
+      <!-- Member only -->
+      <section class="page-view" id="view-my-library" data-role="member">
+        <div class="page-heading"><div><p class="eyebrow">YOUR LIBRARY ACCOUNT</p><h1>My library</h1><p class="muted">Your library card, the books you have, and copies you can borrow from any branch.</p></div></div>
+        <div class="member-welcome panel" id="memberWelcome"></div>
+        <div class="member-portal-grid"><article class="panel"><div class="panel-heading"><div><h2>My borrowed books</h2><p>Active loans across every branch</p></div><span class="small-counter" id="memberLoanCount">0 / 3</span></div><div id="memberActiveLoans" class="member-loans"></div></article><article class="panel"><div class="panel-heading"><div><h2>Find a book</h2><p>Copies on the shelf across the network</p></div></div><label class="search-field"><i data-lucide="search"></i><input id="memberPortalSearch" type="search" aria-label="Search books to borrow" placeholder="Search books to borrow…"></label><div id="memberCatalogue" class="member-catalogue"></div></article></div>
+        <div class="notice-strip"><i data-lucide="info"></i><span>Borrow from any branch and return to any branch. A returned copy stays at the branch that receives it.</span></div>
+      </section>
+
+      <!-- Admin only -->
+      <section class="page-view" id="view-overview" data-role="admin">
+        <div class="page-heading">
+          <div><p class="eyebrow">NETWORK OVERVIEW</p><h1><span id="dashGreeting">Good morning</span>, Admin <span class="wave" aria-hidden="true"><i data-lucide="sparkles"></i></span></h1><p class="muted">Stock across every library in the network.</p></div>
+          <div class="heading-actions"><button class="button button-secondary" data-action="add-branch"><i data-lucide="building-2"></i> Add a library</button><button class="button button-primary" data-action="add-book"><i data-lucide="plus"></i> Add a book</button></div>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon"><i data-lucide="book-open"></i></span><span class="stat-caption">CATALOGUE</span></div><div class="stat-value" id="statTitles">—</div><div class="stat-label">Unique titles</div><div class="stat-foot"><span class="trend-neutral">Titles</span><span>In the selected branches</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon"><i data-lucide="library"></i></span><span class="stat-caption">PHYSICAL COPIES</span></div><div class="stat-value" id="statCopies">—</div><div class="stat-label">Total copies</div><div class="stat-foot"><span class="trend-good" id="statAvailable">— available</span><span>On the shelf</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon"><i data-lucide="arrow-left-right"></i></span><span class="stat-caption">CURRENTLY OUT</span></div><div class="stat-value" id="statLoans">—</div><div class="stat-label">Copies on loan</div><div class="stat-foot"><span class="trend-neutral">Borrowed</span><span>By members</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon"><i data-lucide="map-pin"></i></span><span class="stat-caption">NETWORK</span></div><div class="stat-value" id="statBranches">—</div><div class="stat-label">Libraries</div><div class="stat-foot"><span class="trend-good">Open</span><span>Borrow and return anywhere</span></div></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel network-panel">
+            <div class="panel-heading"><div><h2>Branch inventory</h2><p>Copies on the shelf at each library</p></div><button class="text-button" data-view="branches">View inventory <i data-lucide="arrow-up-right"></i></button></div>
+            <div class="branch-list" id="dashboardBranches"></div>
+          </article>
+          <article class="panel rules-panel">
+            <div class="panel-heading"><div><h2>Circulation rules</h2><p>Applied to every branch</p></div><span class="rule-status"><span class="status-dot"></span> Enforced</span></div>
+            <div class="rule-row"><span class="rule-icon"><i data-lucide="layers"></i></span><div><strong>Maximum 3 active books</strong><p>A fourth checkout is blocked until a book is returned.</p></div></div>
+            <div class="rule-row"><span class="rule-icon"><i data-lucide="copy-x"></i></span><div><strong>No duplicate active title</strong><p>Members can’t hold two copies of the same title at once.</p></div></div>
+            <div class="rule-row"><span class="rule-icon"><i data-lucide="git-compare-arrows"></i></span><div><strong>Borrow and return anywhere</strong><p>A returned copy stays at the branch that receives it.</p></div></div>
+          </article>
+          <article class="panel quick-panel">
+            <div class="panel-heading"><div><h2>Quick actions</h2><p>Manage the collection</p></div></div>
+            <div class="quick-actions">
+              <button data-action="add-book"><span class="quick-icon"><i data-lucide="book-plus"></i></span><span><strong>Add a book</strong><small>Put a new copy on a shelf</small></span><i data-lucide="chevron-right"></i></button>
+              <button data-action="add-branch"><span class="quick-icon"><i data-lucide="building-2"></i></span><span><strong>Add a library</strong><small>Open a new branch</small></span><i data-lucide="chevron-right"></i></button>
+              <button data-action="remove-branch"><span class="quick-icon"><i data-lucide="trash-2"></i></span><span><strong>Remove a library</strong><small>Close an empty branch</small></span><i data-lucide="chevron-right"></i></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Members and admins -->
+      <section class="page-view" id="view-catalogue">
+        <div class="page-heading"><div><p class="eyebrow">DISCOVER</p><h1>Book catalogue</h1><p class="muted">Search titles and see which branches have copies on the shelf.</p></div><button class="button button-primary" data-action="add-book" data-role="admin"><i data-lucide="plus"></i> Add a book</button></div>
+        <div class="catalogue-toolbar panel"><label class="search-field"><i data-lucide="search"></i><input id="catalogueSearch" type="search" aria-label="Search the catalogue" placeholder="Search by title, author or book ID…"></label><select id="catalogueBranch" aria-label="Filter by branch"><option value="all">All branches</option></select><select id="catalogueAvailability" aria-label="Filter availability"><option value="all">All availability</option><option value="available">Available now</option><option value="out">On loan</option></select></div>
+        <div class="catalogue-summary"><span id="catalogueCount">Showing catalogue</span><span><span class="legend-dot available"></span> Available <span class="legend-dot borrowed"></span> On loan</span></div>
+        <div class="book-grid" id="bookGrid"></div>
+      </section>
+
+      <!-- Members and admins -->
+      <section class="page-view" id="view-branches">
+        <div class="page-heading"><div><p class="eyebrow">NETWORK LOCATIONS</p><h1>Branch inventory</h1><p class="muted">Copies at each library, and which are on the shelf right now.</p></div><div class="heading-actions" data-role="admin"><button class="button button-secondary" data-action="remove-branch"><i data-lucide="trash-2"></i> Remove a library</button><button class="button button-primary" data-action="add-branch"><i data-lucide="building-2"></i> Add a library</button></div></div>
+        <div class="branch-cards" id="branchCards"></div>
+        <article class="panel inventory-panel"><div class="panel-heading"><div><h2 id="inventoryTitle">All branch stock</h2><p>Physical copies by title and location</p></div><label class="search-field compact"><i data-lucide="search"></i><input id="inventorySearch" type="search" aria-label="Filter inventory" placeholder="Filter inventory…"></label></div><div class="table-wrap" tabindex="0" role="region" aria-label="Branch stock table"><table><thead><tr><th scope="col">BOOK / COPY</th><th scope="col">BRANCH</th><th scope="col">STATUS</th><th scope="col">ACTION</th></tr></thead><tbody id="inventoryRows"></tbody></table></div></article>
+      </section>
+
+      <!-- Member only -->
+      <section class="page-view" id="view-loans" data-role="member">
+        <div class="page-heading"><div><p class="eyebrow">BORROW & RETURN</p><h1>My loans</h1><p class="muted">Every book you have borrowed, where it came from, and where you returned it.</p></div><div class="heading-actions"><button class="button button-primary" data-action="return-book"><i data-lucide="book-down"></i> Return a book</button></div></div>
+        <div class="loan-metrics" id="loanMetrics"></div>
+        <div class="panel loan-panel"><div class="panel-heading"><div><h2>Loan history</h2><p>Borrowing and return branches are recorded separately.</p></div><div class="inline-filters"><select id="loanStatus" aria-label="Filter loans by status"><option value="all">All loans</option><option value="active">Active loans</option><option value="returned">Returned</option></select><label class="search-field compact"><i data-lucide="search"></i><input id="loanSearch" type="search" aria-label="Search loans" placeholder="Search title or branch…"></label></div></div><div class="table-wrap" tabindex="0" role="region" aria-label="Loan history table"><table><thead><tr><th scope="col">BOOK</th><th scope="col">BORROWED FROM</th><th scope="col">RETURNED TO</th><th scope="col">STATUS</th><th scope="col">ACTION</th></tr></thead><tbody id="loanRows"></tbody></table></div></div>
+      </section>
+
+      <footer class="app-footer"><span>© 2026 LibraMind Library Network</span><span><span class="status-dot"></span> Library API <span class="footer-separator" aria-hidden="true">·</span> Saved in SQLite</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header"><div><p class="eyebrow" id="modalEyebrow">LIBRARY NETWORK</p><h2 id="modalTitle">Action</h2></div><button class="icon-button" id="modalClose" aria-label="Close dialog"><i data-lucide="x"></i></button></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </section>
+  </div>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
